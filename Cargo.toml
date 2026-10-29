@@ -1,0 +1,56 @@
+[package]
+name = "nab"
+version = "1.0.0"
+edition = "2024"
+description = "One key grabs the window you're in: copied, saved and named, in the folder you picked."
+license = "MIT"
+repository = "https://github.com/AcidAlchamy/nab"
+homepage = "https://acidalchamy.com/donationware/nab/"
+authors = ["Acid Alchamy"]
+publish = false
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+toml = "1"
+eframe = { version = "0.37", default-features = false, features = ["glow"] }
+raw-window-handle = "0.6"
+png = "0.18"
+jpeg-encoder = "0.6"
+rfd = { version = "0.16", default-features = false }
+
+[dependencies.windows-sys]
+version = "0.61"
+features = [
+  "Win32_Foundation",
+  "Win32_Graphics_Gdi",
+  "Win32_Graphics_Dwm",
+  "Win32_Media_Audio",
+  "Win32_Security",
+  "Win32_Storage_FileSystem",
+  "Win32_System_Com",
+  "Win32_System_DataExchange",
+  "Win32_System_LibraryLoader",
+  "Win32_System_Memory",
+  "Win32_System_Ole",
+  "Win32_System_Registry",
+  "Win32_System_SystemInformation",
+  "Win32_System_Threading",
+  "Win32_UI_HiDpi",
+  "Win32_UI_Input_KeyboardAndMouse",
+  "Win32_UI_Shell",
+  "Win32_UI_WindowsAndMessaging",
+]
+
+[build-dependencies]
+embed-resource = "3"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+# The PNG and JPEG encoders run on every nab: keep them fast in debug builds too.
+[profile.dev.package."*"]
+opt-level = 2
