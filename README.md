@@ -14,6 +14,8 @@
 <img src="https://img.shields.io/badge/Windows-10%20%7C%2011%20(64--bit)-8B3DFF?style=flat-square&labelColor=0D0B14" alt="Windows 10 and 11">
 <img src="https://img.shields.io/badge/built%20with-Rust-C6FF3A?style=flat-square&logo=rust&logoColor=C6FF3A&labelColor=0D0B14" alt="Built with Rust">
 <img src="https://img.shields.io/badge/idle%20CPU-0%25-C6FF3A?style=flat-square&labelColor=0D0B14" alt="Idle CPU 0%">
+<img src="https://img.shields.io/badge/memory-~2%20MB-C6FF3A?style=flat-square&labelColor=0D0B14" alt="About 2 MB of memory">
+<img src="https://img.shields.io/badge/one%20exe-4.7%20MB-C6FF3A?style=flat-square&labelColor=0D0B14" alt="One 4.7 MB exe">
 <img src="https://img.shields.io/badge/license-MIT%20%C2%B7%20donationware-FF2E7E?style=flat-square&labelColor=0D0B14" alt="MIT license, donationware">
 
 </div>
@@ -37,6 +39,10 @@ or find it later in a folder that reads like a list.
 Want just a piece of the screen? <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>A</kbd> freezes it:
 drag out an area, or click any window to nab exactly that window.
 
+**Built light, on purpose: that's why it exists.** Nab is one 4.7 MB exe with no installer.
+It hands its hotkeys to Windows and goes to sleep: **0% CPU** while it waits and about
+**2 MB** of memory. Nothing polls, nothing hooks your keyboard, nothing phones home.
+
 **Nab is donationware.** It's free to use, for good: no trial, no locked features,
 no account. If it earns its place on your keyboard, a [small donation](https://acidalchamy.com/donationware/nab/?from=github#donate)
 keeps the lab building more tools like it.
@@ -51,6 +57,7 @@ keeps the lab building more tools like it.
 
 | | |
 |---|---|
+| **Featherweight** | Plain Win32 in Rust that sleeps until you press a key: **zero CPU** while it waits, about **2 MB** of memory, no keyboard hooks, no polling. The settings window only exists while it's open. |
 | **The window, exactly** | Nab asks Windows for a window's *visible* edges, so you get the window and nothing else: no strip of desktop, no invisible resize border. |
 | **Clean corners on Windows 11** | Windows 11 rounds its windows; Nab makes the bits outside the curve transparent instead of keeping the wallpaper that was behind them. |
 | **An area, or a window you click** | The screen freezes and dims. Drag out a rectangle, or hover a window (it lights up with its name and size) and click. A **loupe** magnifies the pixels under the pointer; the arrow keys nudge one pixel. |
@@ -58,7 +65,6 @@ keeps the lab building more tools like it.
 | **Named so you can find it** | A file-name pattern per nab: `{app} {date} {time}` by default, with `{title}`, `{n}`, `{size}` and more. Slashes make subfolders: `{app}/{date} {n}` sorts by app. |
 | **A hotkey per job** | Each **nab** is a hotkey with its own kind, folder and name. *Bug reports* to one folder, *Design* to another, screenshots for chat clipboard-only. Up to twelve. |
 | **A card, not a pop-up** | A small preview slides into the corner: the picture, the file, **Open** and **Show in folder**. It never takes the keyboard from your app and leaves by itself. |
-| **Featherweight** | Plain Win32 in Rust that sleeps until you press a key: no polling, about **6 MB** of memory, **zero CPU** while it waits. |
 
 <p align="center"><img src="docs/img/picker.png" alt="The area picker: the screen dims, the window under the pointer lights up with its name and size, a loupe magnifies the pixels" width="100%"></p>
 
@@ -137,7 +143,7 @@ It starts Nab first if it isn't running. *Settings › Behavior › Copy the com
 |---|---|
 | **System** | Windows 10 or 11, 64-bit |
 | **Processor** | Anything that runs Windows 10 |
-| **Memory** | About 6 MB while it waits |
+| **Memory** | About 2 MB while it waits (a few MB after a run of nabs) |
 | **Disk** | One 4.7 MB file |
 | **Graphics** | OpenGL 2 for the settings window (any GPU from the last decade) |
 | **Displays** | Any number, any mix of scaling (per-monitor DPI aware: a 150% screen gives a sharp 150% picture) |
@@ -161,12 +167,14 @@ Area nabs use `Area` as the app (or the app of a window you clicked), screen nab
 
 ## ✦ Light, measured
 
-Numbers from a Lenovo ThinkPad (i5-10310U) on Windows 11 24H2:
+Light is the point of Nab, so here are the numbers, read from Windows' own counters:
 
 | | |
 |---|---|
-| Waiting for a hotkey | **0% CPU**: about 3 M CPU cycles in 10 seconds |
-| Private memory after a run of nabs | **6.2 MB** |
+| Waiting for a hotkey | **0% CPU**: about 3 M CPU cycles in 10 seconds (ThinkPad i5-10310U, Windows 11 24H2) |
+| Private memory at rest | **2.1 MB** (i7-12700 desktop, Windows 11) |
+| Private memory after a run of nabs | **6.2 MB** (the ThinkPad; the last picture stays ready for pasting as a PNG) |
+| The exe | **4.7 MB**, one file, no installer |
 | While the card is up | a redraw 8 times a second; frames only while it fades |
 
 How it stays that light:
