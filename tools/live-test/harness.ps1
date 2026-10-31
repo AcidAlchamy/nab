@@ -17,6 +17,9 @@ public static class U {
   [DllImport("user32.dll")] public static extern void keybd_event(byte vk, byte scan, uint flags, UIntPtr extra);
   [DllImport("user32.dll")] public static extern void mouse_event(uint f, int dx, int dy, uint d, UIntPtr e);
   [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
+  [StructLayout(LayoutKind.Sequential)] public struct PT { public int X, Y; }
+  [DllImport("user32.dll")] static extern IntPtr WindowFromPoint(PT p);
+  public static IntPtr At(int x, int y) { PT p; p.X = x; p.Y = y; return WindowFromPoint(p); }
   [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindow(string c, string t);
   [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr h, uint m, IntPtr w, IntPtr l);
   [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
@@ -54,8 +57,17 @@ public static class U {
 $idle = [U]::Idle()
 Log "idle ms before start: $idle"
 if ($idle -lt 120000) { Log 'Someone used this PC in the last 2 minutes: not testing.'; 'ABORT' | Set-Content "$T\DONE"; exit }
+# A notification can take the focus (on the Carbon, Macrium's update toast, soon after an Explorer window opens): wait it out.
+function NoToast {
+    foreach ($i in 1..60) {
+        $h = [U]::FindWindow('Windows.UI.Core.CoreWindow', 'New notification')
+        if ($h -eq [IntPtr]::Zero -or [U]::GetForegroundWindow() -ne $h) { return }
+        Start-Sleep -Milliseconds 500
+    }
+}
 
 function Combo([byte[]]$keys) {
+    NoToast
     foreach ($k in $keys) { [U]::Key($k, $false); Start-Sleep -Milliseconds 25 }
     [array]::Reverse($keys)
     foreach ($k in $keys) { [U]::Key($k, $true); Start-Sleep -Milliseconds 25 }
@@ -74,7 +86,14 @@ function Describe($f) {
     "$($f.FullName.Substring($out.Length + 1)) | $s | $($f.Length) bytes"
 }
 function NewFiles($before) { Files | Where-Object { $before -notcontains $_.FullName } }
-function Click($x, $y) { [U]::SetCursorPos($x, $y) | Out-Null; Start-Sleep -Milliseconds 120; [U]::mouse_event(2, 0, 0, 0, [UIntPtr]::Zero); Start-Sleep -Milliseconds 60; [U]::mouse_event(4, 0, 0, 0, [UIntPtr]::Zero) }
+function Click($x, $y) { NoToast; [U]::SetCursorPos($x, $y) | Out-Null; Start-Sleep -Milliseconds 120; [U]::mouse_event(2, 0, 0, 0, [UIntPtr]::Zero); Start-Sleep -Milliseconds 60; [U]::mouse_event(4, 0, 0, 0, [UIntPtr]::Zero) }
+# A notification left over the card takes a real click, and the focus with it: then the click goes straight to the card's window.
+function CardClick($x, $y, $bx, $by) {
+    $card = [U]::Win('Nab.Card')
+    if ([U]::At($x + $bx, $y + $by) -eq $card) { Click ($x + $bx) ($y + $by); return }
+    Log 'card covered: clicked through its window'
+    [U]::PostMessage($card, 0x202, [IntPtr]::Zero, [IntPtr](($by -shl 16) -bor $bx)) | Out-Null
+}
 function ClipInfo {
     try {
         $d = [System.Windows.Forms.Clipboard]::GetDataObject()
@@ -157,10 +176,14 @@ New-Item -ItemType Directory -Force "$T\target" | Out-Null
 Start-Process explorer.exe "$T\target"
 $nh = [IntPtr]::Zero
 foreach ($i in 1..30) { Start-Sleep -Milliseconds 200; $nh = [U]::Starting('CabinetWClass', 'target'); if ($nh -ne [IntPtr]::Zero) { break } }
+Start-Sleep -Seconds 12; NoToast
 [U]::ShowWindow($nh, 9) | Out-Null
 [U]::MoveWindow($nh, 260, 160, 1100, 650, $true) | Out-Null
 [U]::SetForegroundWindow($nh) | Out-Null
-Start-Sleep -Milliseconds 800
+Start-Sleep -Milliseconds 300
+# Windows can refuse a background process the focus: a click on the title bar always gets it.
+if ([U]::GetForegroundWindow() -ne $nh) { Click 900 172 }
+Start-Sleep -Milliseconds 500
 $r = [U]::Bounds($nh)
 Log "explorer bounds: $($r.L),$($r.T) - $($r.R),$($r.B)  = $($r.R - $r.L)x$($r.B - $r.T)  foreground ok: $([U]::GetForegroundWindow() -eq $nh)"
 
@@ -186,7 +209,7 @@ Log "clipboard after window nab: $(ClipInfo)"
 $wa = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
 $cx = $wa.Right - 384 - 16; $cy = $wa.Bottom - 106 - 16
 Log "card window visible: $([U]::IsWindowVisible([U]::Win('Nab.Card')))"
-Click ($cx + 280) ($cy + 84)
+CardClick $cx $cy 280 84
 Start-Sleep -Milliseconds 1500
 $folder = [U]::Starting('CabinetWClass', 'out')
 Log "after Show in folder: folder window open: $($folder -ne [IntPtr]::Zero) | card visible: $([U]::IsWindowVisible([U]::Win('Nab.Card')))"

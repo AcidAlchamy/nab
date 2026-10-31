@@ -24,8 +24,8 @@ use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
     ReleaseCapture, SetCapture, SetFocus, VK_DOWN, VK_ESCAPE, VK_LEFT, VK_RETURN, VK_RIGHT, VK_SPACE, VK_UP,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{
-    CreateWindowExW, DefWindowProcW, DestroyWindow, DispatchMessageW, GetMessageW, IDC_CROSS, LoadCursorW, MSG,
-    PostQuitMessage, RegisterClassExW, SW_SHOWNA, SetCursor, SetCursorPos, SetForegroundWindow, ShowWindow,
+    CreateWindowExW, DefWindowProcW, DestroyWindow, DispatchMessageW, GetMessagePos, GetMessageW, IDC_CROSS,
+    LoadCursorW, MSG, PostQuitMessage, RegisterClassExW, SW_SHOWNA, SetCursor, SetCursorPos, SetForegroundWindow, ShowWindow,
     TranslateMessage, WM_ACTIVATEAPP, WM_ERASEBKGND, WM_KEYDOWN, WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MOUSEMOVE, WM_PAINT,
     WM_RBUTTONDOWN, WM_SETCURSOR, WNDCLASSEXW, WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_POPUP,
 };
@@ -410,9 +410,12 @@ unsafe extern "system" fn area_proc(hwnd: HWND, msg: u32, wparam: usize, lparam:
         }
         WM_LBUTTONDOWN => {
             unsafe { SetCapture(hwnd) };
+            // Where the press happened: on a slow PC the pointer has moved on by the time this runs.
+            let at = unsafe { GetMessagePos() };
+            let press = POINT { x: at as u16 as i16 as i32, y: (at >> 16) as u16 as i16 as i32 };
             with(|s| {
-                s.cursor = win::cursor();
-                s.press = Some(s.cursor);
+                s.cursor = press;
+                s.press = Some(press);
             });
         }
         WM_LBUTTONUP => {
